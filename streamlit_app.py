@@ -14,22 +14,20 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
-from analyzers.finger_removal import FingerRemovalAnalyzer
-from analyzers.dog_ear_removal import DogEarRemovalAnalyzer
-from analyzers.warp_correction import WarpCorrectionAnalyzer
-from analyzers.ocr_accuracy import OCRAccuracyAnalyzer
-from analyzers.report_generator import ReportGenerator
-from utils.image_utils import load_image, create_side_by_side
-
-# ---------------------------------------------------------------------------
-# Page config
-# ---------------------------------------------------------------------------
+# Page config must be first Streamlit call
 st.set_page_config(
     page_title="Document Scanner Benchmark Tool",
     page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+from analyzers.finger_removal import FingerRemovalAnalyzer
+from analyzers.dog_ear_removal import DogEarRemovalAnalyzer
+from analyzers.warp_correction import WarpCorrectionAnalyzer
+from analyzers.ocr_accuracy import OCRAccuracyAnalyzer
+from analyzers.report_generator import ReportGenerator
+from utils.image_utils import load_image, cv2_to_pil, create_side_by_side
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -175,7 +173,7 @@ def _ai_explanation(feature_label: str, app_name: str, result: dict) -> str:
             f"Details: {result['details']}."
         )
         msg = client.messages.create(
-            model="claude-haiku-4-5-20251001",
+            model="claude-haiku-4-5",
             max_tokens=200,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -328,7 +326,7 @@ def render_summary(app_images: dict[str, list[np.ndarray]]):
     if st.button("Generate PDF Report"):
         with st.spinner("Building PDF …"):
             gen = ReportGenerator()
-            nested = {FEATURE_LABELS[fk]: results_store[fk] for fk in FEATURE_KEYS if results_store[fk]}
+            nested = {fk: results_store[fk] for fk in FEATURE_KEYS if results_store[fk]}
             pdf_bytes = gen.generate(nested, app_names)
         if pdf_bytes:
             st.download_button(
